@@ -3,7 +3,7 @@
 ---
 
 ## 1. Project Summary
-GenChef is an AI-powered cooking assistant that generates recipes based on the ingredients a user already has, their dietary preferences, and desired cuisine.  
+CookMate is an AI-powered cooking assistant that generates recipes based on the ingredients a user already has, their dietary preferences, and desired cuisine.  
 The goal is to reduce food waste, save time, and provide personalized meal inspiration using GenAI techniques.
 
 ---
