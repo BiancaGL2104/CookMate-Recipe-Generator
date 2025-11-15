@@ -3,7 +3,7 @@
 Project structure:
 
 ```text
-genchef/
+cookmate/
 ├── backend/
 │   └── main.py
 ├── frontend/
