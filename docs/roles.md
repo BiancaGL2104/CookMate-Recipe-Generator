@@ -1,6 +1,6 @@
 # CookMate – Roles & Responsibilities
 
-## Data & Infrastructure Lead – Bianca
+## Data & Infrastructure Lead – Bianca-Gabriela Leoveanu
 **Responsibilities:**
 - Dataset selection and preprocessing  
 - Cleaning and normalization of ingredients  
@@ -16,7 +16,7 @@
 
 ---
 
-## LLM & RAG Orchestration Lead – Teammate
+## LLM & RAG Orchestration Lead – Berin Venedik
 **Responsibilities:**
 - Prompt engineering (system prompt, RAG prompt template)  
 - LLM JSON output structure and validation  
