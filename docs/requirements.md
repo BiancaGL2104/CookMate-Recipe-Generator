@@ -71,6 +71,7 @@ List of available ingredients.
   "max_time_minutes": 30,
   "servings": 2
 }
+```
 
 ---
 
