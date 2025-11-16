@@ -1,6 +1,13 @@
+# Python
 venv/
 __pycache__/
 .ipynb_checkpoints/
+
+# Environment / secrets
 .env
-*.npy
-*.bin
+
+# Large data files (keep them local, not in GitHub)
+data/raw/recipes.csv
+data/raw/RecipeNLG_dataset.csv
+data/cleaned/cleaned_recipes.json
+data/cleaned/cleaned_recipes.parquet
