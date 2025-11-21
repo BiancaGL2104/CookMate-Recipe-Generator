@@ -3,11 +3,13 @@ venv/
 __pycache__/
 .ipynb_checkpoints/
 
-# Environment / secrets
+# Environment
 .env
 
-# Large data files (keep them local, not in GitHub)
-data/raw/recipes.csv
-data/raw/RecipeNLG_dataset.csv
-data/cleaned/cleaned_recipes.json
-data/cleaned/cleaned_recipes.parquet
+# DATA (local only)
+data/raw/
+data/cleaned/
+embeddings/
+
+# MacOS
+.DS_Store
