@@ -1,0 +1,40 @@
+2025-11-25 17:07:33,208 [INFO] RETRIEVAL | query='Ingredients: tomato, garlic, pasta. Diet: vegetarian. Cuisine: Italian' | top_k=5 | indices=[109355, 255851, 479931, 116581, 21032]
+2025-11-25 17:07:33,208 [INFO] RETRIEVAL | scores=[[0.7763100862503052, 0.7708528637886047, 0.767880380153656, 0.7649650573730469, 0.7583348751068115]]
+2025-11-25 17:07:33,208 [INFO] RAG | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | retrieved=5
+2025-11-25 17:07:33,255 [INFO] RAG | Calling LLM model=HuggingFaceTB/SmolLM3-3B:hf-inference
+2025-11-25 17:07:35,557 [INFO] HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-25 17:07:35,561 [INFO] RAG | LLM call succeeded | time=2.306s | response_length=682
+2025-11-25 17:07:35,561 [INFO] RAG | JSON parse success
+2025-11-25 17:07:35,561 [INFO] GENERATE | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | k=5 | time=3.247s
+2025-11-26 10:04:02,713 [INFO] RETRIEVAL | query='Ingredients: tomato, garlic, pasta. Diet: vegetarian. Cuisine: Italian' | top_k=5 | indices=[109355, 255851, 479931, 116581, 21032]
+2025-11-26 10:04:02,713 [INFO] RETRIEVAL | scores=[0.7763100862503052, 0.7708528637886047, 0.767880380153656, 0.7649650573730469, 0.7583348751068115]
+2025-11-26 10:04:02,713 [INFO] SEARCH | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | k=5 | results=5 | time=0.393s
+2025-11-26 10:04:02,715 [INFO] HTTP Request: POST http://testserver/search_recipes "HTTP/1.1 200 OK"
+2025-11-26 10:08:03,173 [INFO] RETRIEVAL | query='Ingredients: tomato, garlic, pasta. Diet: vegetarian. Cuisine: Italian' | top_k=3 | indices=[109355, 255851, 479931]
+2025-11-26 10:08:03,173 [INFO] RETRIEVAL | scores=[0.7763100862503052, 0.7708528637886047, 0.767880380153656]
+2025-11-26 10:08:03,173 [INFO] RAG | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | retrieved=3
+2025-11-26 10:08:03,173 [ERROR] RAG | HF_API_TOKEN is not set. Please export HF_API_TOKEN before running CookMate.
+2025-11-26 10:08:03,173 [ERROR] RAG | LLM error: RuntimeError('HF_API_TOKEN is not set. Please export HF_API_TOKEN before running CookMate.')
+2025-11-26 10:08:03,173 [INFO] GENERATE | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | k=3 | time=0.310s
+2025-11-26 10:08:03,175 [INFO] HTTP Request: POST http://testserver/generate_recipe "HTTP/1.1 200 OK"
+2025-11-26 10:10:33,739 [INFO] RETRIEVAL | query='Ingredients: tomato, garlic, pasta. Diet: vegetarian. Cuisine: Italian' | top_k=3 | indices=[109355, 255851, 479931]
+2025-11-26 10:10:33,739 [INFO] RETRIEVAL | scores=[0.7763100862503052, 0.7708528637886047, 0.767880380153656]
+2025-11-26 10:10:33,739 [INFO] RAG | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | retrieved=3
+2025-11-26 10:10:33,783 [INFO] RAG | Calling LLM model=HuggingFaceTB/SmolLM3-3B:hf-inference
+2025-11-26 10:10:36,539 [INFO] HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-26 10:10:36,552 [INFO] RAG | LLM call succeeded | time=2.770s | response_length=862
+2025-11-26 10:10:36,553 [INFO] RAG | JSON parse success
+2025-11-26 10:10:36,553 [INFO] GENERATE | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | k=3 | time=3.184s
+2025-11-26 10:10:36,557 [INFO] HTTP Request: POST http://testserver/generate_recipe "HTTP/1.1 200 OK"
+2025-11-26 10:11:54,580 [INFO] RETRIEVAL | query='Ingredients: tomato, garlic, pasta. Diet: vegetarian. Cuisine: Italian' | top_k=3 | indices=[109355, 255851, 479931]
+2025-11-26 10:11:54,580 [INFO] RETRIEVAL | scores=[0.7763100862503052, 0.7708528637886047, 0.767880380153656]
+2025-11-26 10:11:54,580 [INFO] RAG | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | retrieved=3
+2025-11-26 10:11:54,617 [INFO] RAG | Calling LLM model=HuggingFaceTB/SmolLM3-3B:hf-inference
+2025-11-26 10:11:56,896 [INFO] HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-26 10:11:56,913 [INFO] RAG | LLM call succeeded | time=2.296s | response_length=701
+2025-11-26 10:11:56,914 [INFO] RAG | JSON parse success
+2025-11-26 10:11:56,914 [INFO] GENERATE | ingredients=['tomato', 'garlic', 'pasta'] | diet=vegetarian | cuisine=Italian | k=3 | time=2.602s
+2025-11-26 10:11:56,918 [INFO] HTTP Request: POST http://testserver/generate_recipe "HTTP/1.1 200 OK"
+2025-11-26 10:28:45,310 [INFO] RETRIEVAL | query='Ingredients: chicken, rice, onion, garlic. Diet: vegetarian. Cuisine: Italian' | top_k=5 | indices=[255851, 19090, 270753, 94730, 86078]
+2025-11-26 10:28:45,310 [INFO] RETRIEVAL | scores=[0.7592888474464417, 0.7526776790618896, 0.7500081062316895, 0.7466573119163513, 0.746161937713623]
+2025-11-26 10:28:45,310 [INFO] SEARCH | ingredients=['chicken', 'rice', 'onion', 'garlic'] | diet=vegetarian | cuisine=Italian | k=5 | results=5 | time=0.437s

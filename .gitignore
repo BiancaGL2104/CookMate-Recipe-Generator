@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Environment
+.env
+
+# DATA (local only)
+data/raw/
+data/cleaned/
+embeddings/
+
+# MacOS
+.DS_Store
+
+venv311/
+venv/
+.venv/
+venv311/
+venv/
+.venv/
