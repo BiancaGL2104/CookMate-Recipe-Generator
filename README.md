@@ -215,7 +215,7 @@ Prompt includes:
   {
     "title": "",
     "ingredients": [
-        {"quantity": ..., "unit": "...", "item": "..."}
+        {"quantity": "...", "unit": "...", "item": "..."}
     ],
     "steps": [],
     "time_minutes": 0,
