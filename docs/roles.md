@@ -12,7 +12,6 @@
 - Frontend UI (Streamlit or web interface)  
 - Nutrition estimation module  
 - Logging and debugging support  
-- Report sections: Dataset, Embeddings, Vector DB, Backend, UI
 
 ---
 
@@ -25,14 +24,11 @@
 - Constraint checking (diet, pantry rules, JSON schema)  
 - Automatic evaluation (diet/ingredient tests)  
 - Human study design & analysis  
-- Report sections: Prompting, RAG Pipeline, Constraint Logic, Evaluation
 
 ---
 
 ## Shared Responsibilities
-- Architecture diagram  
+- Architecture 
 - Final report compilation  
-- Final presentation  
-- Project planning and timeline  
-- Contribution statement
+- Project planning and timeline 
 
