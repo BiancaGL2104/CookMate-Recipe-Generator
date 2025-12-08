@@ -61,7 +61,6 @@ def search_recipes(ingredients, diet=None, cuisine=None, k=5):
     scores = scores[0]
     indices = indices[0]
 
-    # ---- DEDUPLICATION STEP ----
     seen = set()
     unique_indices = []
     unique_scores = []
