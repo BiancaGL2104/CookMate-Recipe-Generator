@@ -55,7 +55,6 @@ class GenerateRequest(BaseModel):
 
 
 class GeneratedRecipeOut(BaseModel):
-    # very loose structure, enough for frontend to use
     input_ingredients: List[str]
     diet: Optional[str]
     cuisine: Optional[str]
