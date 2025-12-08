@@ -11,14 +11,10 @@ from nutrition.estimator import estimate_nutrition_from_retrieved
 import logging
 logger = logging.getLogger("cookmate-backend")
 
-# 🔑 Hugging Face Router config (OpenAI-compatible)
 HF_BASE_URL = "https://router.huggingface.co/v1"
 MODEL_NAME = "HuggingFaceTB/SmolLM3-3B:hf-inference"
 
 
-# -----------------------------
-#  Helper: Lazy client creation
-# -----------------------------
 def get_client() -> OpenAI:
     """
     Lazily create the OpenAI-compatible client.
@@ -36,9 +32,6 @@ def get_client() -> OpenAI:
     )
 
 
-# -----------------------------
-#  Helper: extract JSON block
-# -----------------------------
 def extract_json_from_text(text: str) -> str:
     """
     Try to extract a JSON object substring from noisy text.
@@ -51,9 +44,6 @@ def extract_json_from_text(text: str) -> str:
     return text
 
 
-# -----------------------------
-#  Prompt Builder
-# -----------------------------
 def build_rag_prompt(
     user_ingredients: List[str],
     diet: Optional[str],
@@ -101,9 +91,7 @@ Return ONLY JSON in this format:
     return prompt.strip()
 
 
-# -----------------------------
-#  Main RAG Pipeline
-# -----------------------------
+
 def generate_recipe_with_rag(
     ingredients: List[str],
     diet: Optional[str] = None,
@@ -113,10 +101,8 @@ def generate_recipe_with_rag(
     if not ingredients:
         raise ValueError("At least one ingredient is required")
 
-    # 1) Retrieve similar recipes via FAISS
     retrieved = search_recipes(ingredients, diet, cuisine, k)
 
-    # 2) Build RAG prompt
     prompt = build_rag_prompt(ingredients, diet, cuisine, retrieved)
 
     logger.info(
@@ -124,7 +110,6 @@ def generate_recipe_with_rag(
         ingredients, diet, cuisine, len(retrieved),
     )
 
-    # 3) Call HF Router
     try:
         client = get_client()
         start = time.time()
@@ -148,7 +133,6 @@ def generate_recipe_with_rag(
         )
 
     except Exception as e:
-        # If the API fails, log and fallback
         logger.error("RAG | LLM error: %r", e)
         error_nutrition = estimate_nutrition_from_retrieved(retrieved)
 
@@ -164,9 +148,7 @@ def generate_recipe_with_rag(
             },
         }
 
-    # -----------------------------
-    # 4) Clean + Parse JSON
-    # -----------------------------
+
     raw_text_clean = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
 
     if raw_text_clean.startswith("```"):
@@ -174,7 +156,6 @@ def generate_recipe_with_rag(
         if raw_text_clean.endswith("```"):
             raw_text_clean = raw_text_clean.rsplit("```", 1)[0].strip()
 
-    # NEW: JSON extraction fallback
     candidate = extract_json_from_text(raw_text_clean)
 
     try:
@@ -187,14 +168,10 @@ def generate_recipe_with_rag(
             "raw_text": raw_text,
         }
 
-    # -----------------------------
-    # 5) Estimate Nutrition
-    # -----------------------------
+
     nutrition = estimate_nutrition_from_retrieved(retrieved)
 
-    # -----------------------------
-    # 6) Attach Nutrition
-    # -----------------------------
+
     if isinstance(recipe, dict):
         recipe_with_nutrition = {
             **recipe,
