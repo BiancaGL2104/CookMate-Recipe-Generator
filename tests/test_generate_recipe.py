@@ -28,10 +28,8 @@ def test_generate_recipe_structure():
     recipe = data["generated_recipe"]
     assert isinstance(recipe, dict)
 
-    # Always should have a title (even on error)
     assert "title" in recipe
 
-    # Nutrition should always be present (even on error)
     assert "nutrition" in recipe
     nutrition = recipe["nutrition"]
     assert isinstance(nutrition, dict)
