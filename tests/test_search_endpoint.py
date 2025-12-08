@@ -34,11 +34,9 @@ def test_search_recipes_basic():
     ]:
         assert key in first
 
-    # This line is only so you see something when running with python3
     print("✅ test_search_recipes_basic passed. Returned", len(data), "results.")
 
 
 if __name__ == "__main__":
-    # When running as a normal script: actually run the test function
     print("Running test_search_recipes_basic manually...")
     test_search_recipes_basic()
