@@ -1,10 +1,13 @@
 import os
+import ast
+import logging
+from typing import List, Dict, Any, Optional
+
 import numpy as np
 import pandas as pd
 import faiss
 from sentence_transformers import SentenceTransformer
 
-import logging
 logger = logging.getLogger("cookmate-backend")
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -25,32 +28,80 @@ id_map = pd.read_csv(IDMAP_PATH)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def build_query_text(ingredients, diet=None, cuisine=None):
+def _parse_list_field(value) -> List[Any]:
     """
-    ingredients: list[str] or comma-separated string
-    diet, cuisine: optional strings
+    Ensure that a column value becomes a Python list.
+    Handles:
+    - already-a-list
+    - stringified list (e.g. '["a","b"]' or "['a','b']")
+    - plain string
     """
-    if isinstance(ingredients, str):
-        ingredients_str = ingredients
-    else:
-        ingredients_str = ", ".join(ingredients)
+    if isinstance(value, list):
+        return value
 
-    parts = [f"Ingredients: {ingredients_str}"]
-    if diet:
-        parts.append(f"Diet: {diet}")
-    if cuisine:
-        parts.append(f"Cuisine: {cuisine}")
-    return ". ".join(parts)
+    if isinstance(value, str):
+        try:
+            parsed = ast.literal_eval(value)
+            if isinstance(parsed, list):
+                return parsed
+        except Exception:
+            return [value]
+
+    if value is None:
+        return []
+
+    return [value]
 
 
-def search_recipes(ingredients, diet=None, cuisine=None, k=5):
+def _merge_ingredient_quantities(row: pd.Series) -> List[Dict[str, Optional[str]]]:
     """
-    Returns top-k matching recipes as a list of dicts.
+    Returns a list of objects:
+    [
+        {"ingredient": "...", "quantity": "..."},
+        ...
+    ]
     """
-    query_text = build_query_text(ingredients, diet=diet, cuisine=cuisine)
+    names = _parse_list_field(row.get("ingredients_list"))
+    qtys = _parse_list_field(row.get("quantities_list"))
+
+    merged = []
+    for i, name in enumerate(names):
+        q = qtys[i] if i < len(qtys) else None
+        merged.append(
+            {
+                "ingredient": str(name),
+                "quantity": str(q) if q is not None else None,
+            }
+        )
+
+    return merged
+
+
+def _extract_steps(row: pd.Series) -> List[str]:
+    steps = _parse_list_field(row.get("steps_list"))
+    return [str(s) for s in steps]
+
+
+def _safe_float(x) -> Optional[float]:
+    try:
+        if x is None or (isinstance(x, float) and np.isnan(x)):
+            return None
+        return float(x)
+    except Exception:
+        return None
+
+
+def search_recipes(query: str, k: int = 5) -> List[Dict[str, Any]]:
+    """
+    Search recipes using a free-form query string (already built by build_query).
+    Returns top-k matching recipes as a list of dicts, including structured
+    ingredients with quantities and full steps.
+    """
+    query_text = query
+
     query_emb = model.encode(
         [query_text],
-        normalize_embeddings=True
+        normalize_embeddings=True,
     ).astype("float32")
 
     ntotal = index.ntotal
@@ -61,6 +112,7 @@ def search_recipes(ingredients, diet=None, cuisine=None, k=5):
     scores = scores[0]
     indices = indices[0]
 
+    # Deduplicate indices while preserving order
     seen = set()
     unique_indices = []
     unique_scores = []
@@ -75,24 +127,34 @@ def search_recipes(ingredients, diet=None, cuisine=None, k=5):
     indices = unique_indices
     scores = unique_scores
 
-    results = []
+    results: List[Dict[str, Any]] = []
+
     for idx in indices:
         row = df_emb.iloc[int(idx)]
-        results.append({
+
+        structured_ingredients = _merge_ingredient_quantities(row)
+        steps = _extract_steps(row)
+
+        result = {
             "recipe_id": int(row["recipe_id"]),
             "title": row["title"],
-            "ingredients_list": row["ingredients_list"],
-            "steps_list": row["steps_list"],
-            "calories": float(row["Calories"]),
-            "fat": float(row["FatContent"]),
-            "carbs": float(row["CarbohydrateContent"]),
-            "protein": float(row["ProteinContent"])
-        })
-    
+            "ingredients_list": _parse_list_field(row.get("ingredients_list")),
+            "ingredients_structured": structured_ingredients,
+            "steps_list": steps,
+            "calories": _safe_float(row.get("Calories")),
+            "fat": _safe_float(row.get("FatContent")),
+            "carbs": _safe_float(row.get("CarbohydrateContent")),
+            "protein": _safe_float(row.get("ProteinContent")),
+        }
+
+        results.append(result)
+
     logger.info(
-        "RETRIEVAL | query='%s' | top_k=%d | indices=%s",
-        query_text, k, indices
+        "RETRIEVAL | query='%s' | top_k=%d | indices=%s | scores=%s",
+        query_text,
+        k,
+        indices,
+        scores,
     )
-    logger.info("RETRIEVAL | scores=%s", scores)
 
     return results

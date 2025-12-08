@@ -1,193 +1,190 @@
-import os
 import json
-import re
-import time
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
-from openai import OpenAI
-from .search import search_recipes
+import requests
+
+from rag_pipeline.query_builder import build_query
+from rag_pipeline.search import search_recipes
+from rag_pipeline.prompt_builder import UserRequest, build_rag_prompt
 from nutrition.estimator import estimate_nutrition_from_retrieved
 
 import logging
+
 logger = logging.getLogger("cookmate-backend")
 
-HF_BASE_URL = "https://router.huggingface.co/v1"
-MODEL_NAME = "HuggingFaceTB/SmolLM3-3B:hf-inference"
 
-
-def get_client() -> OpenAI:
-    """
-    Lazily create the OpenAI-compatible client.
-    This avoids crashing on import if HF_API_TOKEN is not set.
-    """
-    hf_token = os.environ.get("HF_API_TOKEN")
-    if not hf_token:
-        msg = "HF_API_TOKEN is not set. Please export HF_API_TOKEN before running CookMate."
-        logger.error("RAG | %s", msg)
-        raise RuntimeError(msg)
-
-    return OpenAI(
-        base_url=HF_BASE_URL,
-        api_key=hf_token,
-    )
-
-
-def extract_json_from_text(text: str) -> str:
-    """
-    Try to extract a JSON object substring from noisy text.
-    If nothing is found, return the original text.
-    """
-    start = text.find("{")
-    end = text.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        return text[start : end + 1]
-    return text
-
-
-def build_rag_prompt(
-    user_ingredients: List[str],
-    diet: Optional[str],
-    cuisine: Optional[str],
-    retrieved_recipes: List[dict],
+def run_local_llm(
+    prompt: str,
+    model: str = "llama3",
+    temperature: float = 0.2,
+    timeout: int = 120,
 ) -> str:
-    ingredients_str = ", ".join(user_ingredients)
-    diet_str = diet or "no specific diet"
-    cuisine_str = cuisine or "any cuisine"
+    """
+    Call the local LLaMA model via Ollama.
 
-    context_parts = []
-    for r in retrieved_recipes:
-        ing = ", ".join(r["ingredients_list"])
-        steps = " ".join(r["steps_list"][:3])
-        context_parts.append(
-            f"Title: {r['title']}\nIngredients: {ing}\nSteps: {steps}\n"
-        )
-
-    context = "\n\n".join(context_parts)
-
-    prompt = f"""
-You are CookMate, an AI that creates recipes.
-
-User ingredients: {ingredients_str}
-Diet: {diet_str}
-Cuisine: {cuisine_str}
-
-Here are example recipes from our database:
-
-{context}
-
-TASK:
-Create a NEW recipe (not copied) that uses the user's ingredients.
-Respect the diet/cuisine if provided.
-
-Return ONLY JSON in this format:
-{{
- "title": "...",
- "ingredients": ["..."],
- "steps": ["..."],
- "notes": "..."
-}}
-"""
-
-    return prompt.strip()
+    Make sure `ollama serve` is running in another terminal:
+        ollama run llama3
+    """
+    resp = requests.post(
+        "http://localhost:11434/api/generate",
+        json={
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+            },
+        },
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("response", "")
 
 
+def validate_recipe_json(text: str):
+    """
+    Checks that the model output is valid JSON and matches required fields.
+    Returns (True, parsed_json) or (False, error_message).
+    """
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as e:
+        return False, f"JSON decode error: {e}"
 
-def generate_recipe_with_rag(
-    ingredients: List[str],
+    required_fields = [
+        "title",
+        "ingredients",
+        "steps",
+        "time_minutes",
+        "servings",
+        "diet",
+        "cuisine",
+        "reason",
+    ]
+
+    missing = [f for f in required_fields if f not in parsed]
+    if missing:
+        return False, f"Missing fields: {missing}"
+
+    if not isinstance(parsed["ingredients"], list):
+        return False, "ingredients must be a list"
+
+    if not isinstance(parsed["steps"], list):
+        return False, "steps must be a list"
+
+    return True, parsed
+
+
+def generate_recipe(
+    pantry: List[str],
     diet: Optional[str] = None,
     cuisine: Optional[str] = None,
-    k: int = 5,
-):
-    if not ingredients:
-        raise ValueError("At least one ingredient is required")
+    k: int = 3,
+    max_retries: int = 1,
+) -> Dict[str, Any]:
+    """
+    Full CookMate RAG pipeline in one function.
 
-    retrieved = search_recipes(ingredients, diet, cuisine, k)
+    1. Build query from pantry + diet + cuisine
+    2. Retrieve similar recipes with search_recipes(...)
+    3. Estimate nutrition from retrieved recipes
+    4. Build RAG prompt with build_rag_prompt(...)
+    5. Call local LLM (Ollama / LLaMA 3)
+    6. Validate JSON against our schema
+    7. Retry once if JSON is invalid (optional)
+    8. Return either a recipe dict or an error description
+    """
 
-    prompt = build_rag_prompt(ingredients, diet, cuisine, retrieved)
-
-    logger.info(
-        "RAG | ingredients=%s | diet=%s | cuisine=%s | retrieved=%d",
-        ingredients, diet, cuisine, len(retrieved),
+    user = UserRequest(
+        ingredients=pantry,
+        diet=diet,
+        cuisine=cuisine,
     )
 
-    try:
-        client = get_client()
-        start = time.time()
-        logger.info("RAG | Calling LLM model=%s", MODEL_NAME)
+    query = build_query(
+        ingredients=user.ingredients,
+        diet=user.diet,
+        cuisine=user.cuisine,
+    )
 
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": "You are a helpful cooking assistant."},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=512,
-            temperature=0.7,
-        )
-        elapsed = time.time() - start
-
-        raw_text = completion.choices[0].message.content or ""
-        logger.info(
-            "RAG | LLM call succeeded | time=%.3fs | response_length=%d",
-            elapsed, len(raw_text),
-        )
-
-    except Exception as e:
-        logger.error("RAG | LLM error: %r", e)
-        error_nutrition = estimate_nutrition_from_retrieved(retrieved)
-
+    retrieved = search_recipes(query, k=k)
+    if not retrieved:
         return {
-            "input_ingredients": ingredients,
+            "success": False,
+            "error": "no_recipes_found",
+            "message": "search_recipes returned no candidates",
+            "pantry": pantry,
             "diet": diet,
             "cuisine": cuisine,
-            "retrieved": retrieved,
-            "generated_recipe": {
-                "title": "Generation error",
-                "raw_text": f"HuggingFace Router error: {repr(e)}",
-                "nutrition": error_nutrition,
-            },
         }
 
+    nutrition_estimate = estimate_nutrition_from_retrieved(retrieved)
 
-    raw_text_clean = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+    prompt = build_rag_prompt(user, retrieved)
 
-    if raw_text_clean.startswith("```"):
-        raw_text_clean = re.sub(r"^```[a-zA-Z0-9]*\s*", "", raw_text_clean)
-        if raw_text_clean.endswith("```"):
-            raw_text_clean = raw_text_clean.rsplit("```", 1)[0].strip()
+    prompt += """
+    
+IMPORTANT: You must answer ONLY with a single JSON object that matches this schema.
 
-    candidate = extract_json_from_text(raw_text_clean)
+- "title": string
+- "ingredients": an ARRAY.
+  Each element SHOULD be an OBJECT with:
+    - "item": ingredient name (string)
+    - "quantity": quantity and unit as a single string (e.g. "1 cup", "2 tbsp", "200 g", "1 small", "2 cloves").
+  Example:
+  "ingredients": [
+    { "item": "rice", "quantity": "1 cup" },
+    { "item": "onion", "quantity": "1 small" },
+    { "item": "garlic", "quantity": "2 cloves" }
+  ]
 
-    try:
-        recipe = json.loads(candidate)
-        logger.info("RAG | JSON parse success")
-    except Exception:
-        logger.warning("RAG | JSON parse failed, returning raw_text")
-        recipe = {
-            "title": "Generated Recipe (unparsed JSON)",
-            "raw_text": raw_text,
-        }
+If the retrieved recipes do not give an exact quantity, infer a reasonable quantity
+for 1 batch of the recipe based on typical home cooking. NEVER leave out the quantity;
+always provide something like "1 cup", "2 tbsp", "200 g", etc.
 
+Do NOT include any commentary, explanation, prose, or markdown. 
+Return ONLY the JSON object.
+"""
 
-    nutrition = estimate_nutrition_from_retrieved(retrieved)
+    last_raw_output = ""
+    last_error_message = ""
 
+    for attempt in range(max_retries + 1):
+        last_raw_output = run_local_llm(prompt)
 
-    if isinstance(recipe, dict):
-        recipe_with_nutrition = {
-            **recipe,
-            "nutrition": nutrition,
-        }
-    else:
-        recipe_with_nutrition = {
-            "title": "Generated Recipe (unexpected format)",
-            "raw_text": raw_text,
-            "nutrition": nutrition,
-        }
+        ok, result = validate_recipe_json(last_raw_output)
+        if ok:
+            recipe = result
+
+            if nutrition_estimate:
+                recipe["nutrition"] = nutrition_estimate
+
+            return {
+                "success": True,
+                "recipe": recipe,
+                "raw_output": last_raw_output,
+                "pantry": pantry,
+                "diet": diet,
+                "cuisine": cuisine,
+            }
+        else:
+            last_error_message = result
+
+            if attempt < max_retries:
+                prompt = (
+                    prompt
+                    + "\n\nYou produced INVALID JSON. "
+                    "Regenerate the ENTIRE recipe as VALID JSON that matches the schema. "
+                    "Do NOT include any text outside the JSON object."
+                )
 
     return {
-        "input_ingredients": ingredients,
+        "success": False,
+        "error": "invalid_json",
+        "validation_message": last_error_message,
+        "raw_output": last_raw_output,
+        "pantry": pantry,
         "diet": diet,
         "cuisine": cuisine,
-        "retrieved": retrieved,
-        "generated_recipe": recipe_with_nutrition,
     }

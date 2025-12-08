@@ -2,29 +2,18 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
 
-from rag_pipeline.search import search_recipes  
-from rag_pipeline.generator import generate_recipe_with_rag
+from rag_pipeline.query_builder import build_query
+from rag_pipeline.search import search_recipes
+from rag_pipeline.generator import generate_recipe
 
 from fastapi.middleware.cors import CORSMiddleware
-
-import logging
-import time
 
 
 app = FastAPI(title="CookMate Backend")
 
-logging.basicConfig(
-    filename="logs/backend.log",
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-
-logger = logging.getLogger("cookmate-backend")
-
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,28 +26,46 @@ class SearchRequest(BaseModel):
     cuisine: Optional[str] = None
     k: int = 5
 
+
+class IngredientQuantity(BaseModel):
+    ingredient: str
+    quantity: Optional[str] = None
+
+
 class RecipeOut(BaseModel):
     recipe_id: int
     title: str
-    ingredients_list: List[str]
-    steps_list: List[str]
-    calories: float
-    fat: float
-    carbs: float
-    protein: float
+
+    ingredients_list: List[str] | str
+
+    ingredients_structured: Optional[List[IngredientQuantity]] = None
+
+    steps_list: List[str] | str
+
+    calories: Optional[float] = None
+    fat: Optional[float] = None
+    carbs: Optional[float] = None
+    protein: Optional[float] = None
+
 
 class GenerateRequest(BaseModel):
     ingredients: List[str] | str
     diet: Optional[str] = None
     cuisine: Optional[str] = None
-    k: int = 5
+    k: int = 3
+    max_retries: int = 1
 
 
 class GeneratedRecipeOut(BaseModel):
-    input_ingredients: List[str]
-    diet: Optional[str]
-    cuisine: Optional[str]
-    generated_recipe: dict
+    success: bool
+    pantry: List[str]
+    diet: Optional[str] = None
+    cuisine: Optional[str] = None
+    recipe: Optional[dict] = None
+    raw_output: Optional[str] = None
+    error: Optional[str] = None
+    validation_message: Optional[str] = None
+
 
 def normalize_ingredients(ing):
     """
@@ -74,57 +81,50 @@ def normalize_ingredients(ing):
 def root():
     return {"status": "ok", "message": "Welcome to CookMate API"}
 
+
 @app.get("/health")
 def health():
     return {"status": "ok", "message": "CookMate backend running"}
 
+
 @app.post("/search_recipes", response_model=List[RecipeOut])
 def search_recipes_endpoint(payload: SearchRequest):
-    start = time.time()
-    ingredients = normalize_ingredients(payload.ingredients)
+    if isinstance(payload.ingredients, str):
+        ingredients = [x.strip() for x in payload.ingredients.split(",") if x.strip()]
+    else:
+        ingredients = payload.ingredients
 
-    results = search_recipes(
+    query = build_query(
         ingredients=ingredients,
         diet=payload.diet,
         cuisine=payload.cuisine,
-        k=payload.k,
     )
 
-    elapsed = time.time() - start
-
-    logger.info(
-        "SEARCH | ingredients=%s | diet=%s | cuisine=%s | k=%d | results=%d | time=%.3fs",
-        ingredients, payload.diet, payload.cuisine, payload.k, len(results), elapsed
-    )
+    results = search_recipes(query, k=payload.k)
     return results
-
-
 
 @app.post("/generate_recipe", response_model=GeneratedRecipeOut)
 def generate_recipe_endpoint(payload: GenerateRequest):
-    ingredients = normalize_ingredients(payload.ingredients)
+    if isinstance(payload.ingredients, str):
+        pantry = [x.strip() for x in payload.ingredients.split(",") if x.strip()]
+    else:
+        pantry = payload.ingredients
 
-    start = time.time()
-    result = generate_recipe_with_rag(
-        ingredients=ingredients,
+    result = generate_recipe(
+        pantry=pantry,
         diet=payload.diet,
         cuisine=payload.cuisine,
         k=payload.k,
+        max_retries=payload.max_retries,
     )
-    elapsed = time.time() - start
-
-    logger.info(
-        "GENERATE | ingredients=%s | diet=%s | cuisine=%s | k=%d | time=%.3fs",
-        ingredients, payload.diet, payload.cuisine, payload.k, elapsed
-    )
-
-    generated_recipe = result.get("generated_recipe") or {}
 
     return {
-        "input_ingredients": result.get("input_ingredients", ingredients),
+        "success": result.get("success", False),
+        "pantry": result.get("pantry", pantry),
         "diet": result.get("diet", payload.diet),
         "cuisine": result.get("cuisine", payload.cuisine),
-        "generated_recipe": generated_recipe,
+        "recipe": result.get("recipe"),
+        "raw_output": result.get("raw_output"),
+        "error": result.get("error"),
+        "validation_message": result.get("validation_message"),
     }
-
-

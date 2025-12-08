@@ -1,0 +1,24 @@
+# === Backend ===
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+requests
+
+# === RAG / Embeddings ===
+sentence-transformers
+faiss-cpu
+numpy
+pandas
+scikit-learn
+
+# === Streamlit frontend ===
+streamlit
+
+# === Notebooks ===
+ipykernel
+jupyter
+matplotlib
+
+# === Other tools ===
+tqdm

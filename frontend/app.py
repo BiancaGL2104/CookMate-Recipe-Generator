@@ -2,22 +2,14 @@ import os
 import requests
 import streamlit as st
 
-# =========================
-# CONFIG
-# =========================
-
 BACKEND_URL = os.environ.get("COOKMATE_BACKEND_URL", "http://127.0.0.1:8000")
-HERO_IMAGE_PATH = os.path.join("assets", "cookmate_hero.jpg")  # your AI image
+HERO_IMAGE_PATH = os.path.join("assets", "cookmate_hero.jpg")  
 
 st.set_page_config(
     page_title="CookMate – Smart Recipe Assistant",
     page_icon="🍝",
     layout="wide",
 )
-
-# =========================
-# CUSTOM STYLES
-# =========================
 
 CUSTOM_CSS = """
 <style>
@@ -40,7 +32,7 @@ CUSTOM_CSS = """
     box-shadow: 0 18px 55px rgba(15, 23, 42, 0.10);
     border: 1px solid rgba(243, 244, 246, 0.9);
     backdrop-filter: blur(18px);
-    min-height: 320px;              /* roughly match image height */
+    min-height: 320px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -53,6 +45,26 @@ CUSTOM_CSS = """
     padding: 1.5rem 1.75rem;
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
     border: 1px solid rgba(229, 231, 235, 0.9);
+}
+
+/* Individual result cards */
+.result-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 18px;
+    padding: 1.1rem 1.4rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    margin-bottom: 0.9rem;
+}
+
+/* Small label above steps */
+.result-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 0.25rem;
 }
 
 /* Pills / chips */
@@ -133,29 +145,29 @@ CUSTOM_CSS = """
     border-radius: 24px;
     object-fit: cover;
     width: 100%;
-    max-height: 320px;   /* keeps it from going super tall */
+    max-height: 320px;
 }
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
-
-# =========================
-# HELPERS
-# =========================
 
 def parse_ingredients(text: str) -> list[str]:
     """Turn a comma-separated string into a list of non-empty ingredient strings."""
     return [x.strip() for x in text.split(",") if x.strip()]
 
 
-def call_backend_search(ingredients: list[str], diet: str | None, cuisine: str | None, k: int = 5):
+def call_backend_search(
+    ingredients: list[str], diet: str | None, cuisine: str | None, k: int = 5
+):
     payload = {"ingredients": ingredients, "diet": diet, "cuisine": cuisine, "k": k}
     resp = requests.post(f"{BACKEND_URL}/search_recipes", json=payload, timeout=60)
     resp.raise_for_status()
     return resp.json()
 
 
-def call_backend_generate(ingredients: list[str], diet: str | None, cuisine: str | None, k: int = 5):
+def call_backend_generate(
+    ingredients: list[str], diet: str | None, cuisine: str | None, k: int = 5
+):
     payload = {"ingredients": ingredients, "diet": diet, "cuisine": cuisine, "k": k}
     resp = requests.post(f"{BACKEND_URL}/generate_recipe", json=payload, timeout=120)
     resp.raise_for_status()
@@ -170,9 +182,29 @@ def render_pills(items, prefix_icon=""):
     )
     st.markdown(pills_html, unsafe_allow_html=True)
 
-# =========================
-# LAYOUT – HERO (SIDE BY SIDE)
-# =========================
+
+def render_ingredient_item(item):
+    """
+    Render an ingredient that may be:
+      - a plain string ("2 cups flour")
+      - a dict from search: {"ingredient": "flour", "quantity": "2 cups"}
+      - a dict from generation: {"item"/"name"/"ingredient": ..., "quantity": "...", "unit": "..."}
+    """
+    if isinstance(item, dict):
+        name = (
+            str(
+                item.get("ingredient")
+                or item.get("item")
+                or item.get("name")
+                or ""
+            ).strip()
+        )
+        qty = str(item.get("quantity") or "").strip()
+        unit = str(item.get("unit") or "").strip()
+        parts = [p for p in [qty, unit, name] if p]
+        return " ".join(parts) if parts else str(item)
+    return str(item)
+
 
 left_col, right_col = st.columns([1.6, 1.2])
 
@@ -204,16 +236,11 @@ with left_col:
 
 with right_col:
     if os.path.exists(HERO_IMAGE_PATH):
-        # IMPORTANT: no use_column_width -> we use the new flag
         st.image(HERO_IMAGE_PATH, use_container_width=True)
     else:
         st.caption("Add your hero image at: " + HERO_IMAGE_PATH)
 
 st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
-
-# =========================
-# INPUT CARD
-# =========================
 
 st.markdown('<div class="section-card">', unsafe_allow_html=True)
 st.markdown("### 1 · Tell CookMate what you have")
@@ -266,13 +293,8 @@ cuisine = None if cuisine_choice == "None" else cuisine_choice
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# =========================
-# TABS: SEARCH & GENERATE
-# =========================
-
 search_tab, generate_tab = st.tabs(["🔍 Explore recipe ideas", "🍽 Create a new recipe"])
 
-# ---------- SEARCH TAB ----------
 with search_tab:
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown("### 2 · Explore ideas based on your ingredients")
@@ -297,16 +319,51 @@ with search_tab:
                             "No recipes found for these ingredients yet. Try changing or adding items."
                         )
                     else:
-                        st.markdown("##### Results")
+                        st.markdown("#### Results")
+
                         for r in results:
-                            st.markdown(f"###### {r['title']}")
+                            st.markdown('<div class="result-card">', unsafe_allow_html=True)
+
+                            st.markdown(f"##### {r['title']}")
+
                             render_pills(r.get("ingredients_list", []), prefix_icon="🧂 ")
 
-                            steps_preview = r.get("steps_list", [])[:3]
-                            if steps_preview:
-                                st.markdown("**Steps (preview):**")
-                                for i, step in enumerate(steps_preview, start=1):
-                                    st.markdown(f"{i}. {step}")
+                            full_ings = (
+                                r.get("ingredients_structured")
+                                or r.get("ingredients")
+                                or r.get("ingredients_raw")
+                            )
+                            if full_ings:
+                                st.markdown("**Ingredients**")
+                                if isinstance(full_ings, list):
+                                    for it in full_ings:
+                                        st.markdown(f"- {render_ingredient_item(it)}")
+                                elif isinstance(full_ings, str):
+                                    lines = [
+                                        ln.strip()
+                                        for ln in full_ings.splitlines()
+                                        if ln.strip()
+                                    ]
+                                    for line in lines:
+                                        st.markdown(f"- {line}")
+
+                            steps_full = r.get("steps_list") or r.get("steps")
+                            if steps_full:
+                                st.markdown(
+                                    '<div class="result-label">Steps</div>',
+                                    unsafe_allow_html=True,
+                                )
+                                if isinstance(steps_full, list):
+                                    for i, step in enumerate(steps_full, start=1):
+                                        st.markdown(f"{i}. {step}")
+                                elif isinstance(steps_full, str):
+                                    lines = [
+                                        ln.strip()
+                                        for ln in steps_full.splitlines()
+                                        if ln.strip()
+                                    ]
+                                    for i, line in enumerate(lines, start=1):
+                                        st.markdown(f"{i}. {line}")
 
                             nutri_bits = []
                             if r.get("calories") is not None:
@@ -321,17 +378,18 @@ with search_tab:
                             if nutri_bits:
                                 st.caption(" · ".join(nutri_bits))
 
-                            st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------- GENERATE TAB ----------
 with generate_tab:
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown("### 3 · Let CookMate create a recipe for you")
     st.markdown("<div style='margin-top: -0.5rem;'></div>", unsafe_allow_html=True)
 
-    generate_clicked = st.button("🍽 Generate recipe", type="primary", use_container_width=True)
+    generate_clicked = st.button(
+        "🍽 Generate recipe", type="primary", use_container_width=True
+    )
 
     if generate_clicked:
         ingredients = parse_ingredients(ingredients_text)
@@ -345,73 +403,98 @@ with generate_tab:
                 except Exception as e:
                     st.error(f"Generation request failed: {e}")
                 else:
-                    recipe = data.get("generated_recipe", {}) or {}
+                    success = data.get("success", False)
 
-                    st.markdown("##### Result")
-                    st.title(recipe.get("title", "Generated Recipe"))
+                    if not success:
+                        error_code = data.get("error", "generation_failed")
+                        validation_msg = data.get("validation_message")
+                        st.error(f"Recipe generation failed ({error_code}).")
 
-                    meta_pills = []
-                    if diet:
-                        meta_pills.append(f"🥗 {diet}")
-                    if cuisine:
-                        meta_pills.append(f"🌍 {cuisine}")
-                    render_pills(meta_pills)
-
-                    # -------- INGREDIENTS --------
-                    ing_list = recipe.get("ingredients")
-                    st.subheader("🧂 Ingredients")
-                    if isinstance(ing_list, list) and ing_list:
-                        for item in ing_list:
-                            st.markdown(f"- {item}")
+                        if validation_msg or data.get("raw_output"):
+                            with st.expander("Debug details (for developers)"):
+                                if validation_msg:
+                                    st.write(f"Validation message: {validation_msg}")
+                                raw = data.get("raw_output")
+                                if raw:
+                                    st.code(raw, language="json")
                     else:
-                        st.write("No structured ingredients found.")
+                        recipe = data.get("recipe") or {}
 
-                    # -------- STEPS --------
-                    steps = recipe.get("steps")
-                    st.subheader("👩‍🍳 Steps")
-                    if isinstance(steps, list) and steps:
-                        for i, step in enumerate(steps, start=1):
-                            st.markdown(f"{i}. {step}")
-                    else:
-                        st.write("No structured steps found.")
+                        st.markdown("##### Result")
+                        st.markdown(
+                            f"#### {recipe.get('title', 'Generated Recipe')}",
+                        )
 
-                    # -------- NOTES --------
-                    notes = recipe.get("notes")
-                    if notes:
-                        st.subheader("📝 Notes")
-                        st.write(notes)
+                        meta_pills = []
+                        if diet:
+                            meta_pills.append(f"🥗 {diet}")
+                        if cuisine:
+                            meta_pills.append(f"🌍 {cuisine}")
+                        render_pills(meta_pills)
 
-                    # -------- NUTRITION --------
-                    nutrition = recipe.get("nutrition") or {}
-                    if nutrition:
-                        st.subheader("⚖️ Approximate nutrition")
+                        ing_list = recipe.get("ingredients")
+                        st.subheader("🧂 Ingredients")
+                        if isinstance(ing_list, list) and ing_list:
+                            for item in ing_list:
+                                st.markdown(f"- {render_ingredient_item(item)}")
+                        elif isinstance(ing_list, str) and ing_list.strip():
+                            lines = [
+                                ln.strip()
+                                for ln in ing_list.splitlines()
+                                if ln.strip()
+                            ]
+                            for line in lines:
+                                st.markdown(f"- {line}")
+                        else:
+                            st.write("No structured ingredients found.")
 
-                        bits = []
-                        if nutrition.get("calories") is not None:
-                            bits.append(f"{nutrition['calories']:.0f} kcal")
-                        if nutrition.get("protein") is not None:
-                            bits.append(f"{nutrition['protein']:.1f} g protein")
-                        if nutrition.get("carbs") is not None:
-                            bits.append(f"{nutrition['carbs']:.1f} g carbs")
-                        if nutrition.get("fat") is not None:
-                            bits.append(f"{nutrition['fat']:.1f} g fat")
+                        steps = recipe.get("steps")
+                        st.subheader("👩‍🍳 Steps")
+                        if isinstance(steps, list) and steps:
+                            for i, step in enumerate(steps, start=1):
+                                st.markdown(f"{i}. {step}")
+                        elif isinstance(steps, str) and steps.strip():
+                            lines = [
+                                ln.strip()
+                                for ln in steps.splitlines()
+                                if ln.strip()
+                            ]
+                            for i, line in enumerate(lines, start=1):
+                                st.markdown(f"{i}. {line}")
+                        else:
+                            st.write("No structured steps found.")
 
-                        if bits:
-                            st.caption(" · ".join(bits))
-                            st.caption(
-                                "Estimated by averaging nutrition values of similar recipes CookMate used as inspiration."
-                            )
+                        notes = recipe.get("notes") or recipe.get("reason")
+                        if notes:
+                            st.subheader("📝 Notes")
+                            st.write(notes)
 
-                    # -------- RAW DEBUG (only if present) --------
-                    if "raw_text" in recipe:
-                        with st.expander("🔍 Raw AI output (debug)"):
-                            st.code(recipe["raw_text"], language="json")
+                        nutrition = recipe.get("nutrition") or {}
+                        if nutrition:
+                            st.subheader("⚖️ Approximate nutrition")
+
+                            bits = []
+                            if nutrition.get("calories") is not None:
+                                bits.append(f"{nutrition['calories']:.0f} kcal")
+                            if nutrition.get("protein") is not None:
+                                bits.append(f"{nutrition['protein']:.1f} g protein")
+                            if nutrition.get("carbs") is not None:
+                                bits.append(f"{nutrition['carbs']:.1f} g carbs")
+                            if nutrition.get("fat") is not None:
+                                bits.append(f"{nutrition['fat']:.1f} g fat")
+
+                            if bits:
+                                st.caption(" · ".join(bits))
+                                st.caption(
+                                    "Estimated by averaging nutrition values of similar recipes CookMate used as inspiration."
+                                )
+
+                        raw_output = data.get("raw_output")
+                        if raw_output:
+                            with st.expander("🔍 Raw AI output (debug)"):
+                                st.code(raw_output, language="json")
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-# =========================
-# FOOTER
-# =========================
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 st.caption(

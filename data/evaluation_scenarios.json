@@ -1,0 +1,261 @@
+[
+    {
+        "id": 1,
+        "pantry": [
+            "beans",
+            "milk",
+            "broccoli",
+            "spinach",
+            "beef",
+            "chicken",
+            "garlic"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "italian",
+        "description": "Pantry: ['beans', 'milk', 'broccoli', 'spinach', 'beef', 'chicken', 'garlic'], diet=gluten-free, cuisine=italian"
+    },
+    {
+        "id": 2,
+        "pantry": [
+            "beans",
+            "lemon",
+            "pasta"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "indian",
+        "description": "Pantry: ['beans', 'lemon', 'pasta'], diet=gluten-free, cuisine=indian"
+    },
+    {
+        "id": 3,
+        "pantry": [
+            "rice",
+            "bell pepper",
+            "lemon",
+            "egg",
+            "beans"
+        ],
+        "diet": "vegetarian",
+        "cuisine": "italian",
+        "description": "Pantry: ['rice', 'bell pepper', 'lemon', 'egg', 'beans'], diet=vegetarian, cuisine=italian"
+    },
+    {
+        "id": 4,
+        "pantry": [
+            "beef",
+            "chicken",
+            "tofu"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "indian",
+        "description": "Pantry: ['beef', 'chicken', 'tofu'], diet=gluten-free, cuisine=indian"
+    },
+    {
+        "id": 5,
+        "pantry": [
+            "flour",
+            "garlic",
+            "tomato",
+            "chicken",
+            "milk"
+        ],
+        "diet": "vegetarian",
+        "cuisine": "none",
+        "description": "Pantry: ['flour', 'garlic', 'tomato', 'chicken', 'milk'], diet=vegetarian, cuisine=none"
+    },
+    {
+        "id": 6,
+        "pantry": [
+            "lemon",
+            "carrot",
+            "butter",
+            "milk",
+            "cheese",
+            "beans"
+        ],
+        "diet": "vegetarian",
+        "cuisine": "none",
+        "description": "Pantry: ['lemon', 'carrot', 'butter', 'milk', 'cheese', 'beans'], diet=vegetarian, cuisine=none"
+    },
+    {
+        "id": 7,
+        "pantry": [
+            "spinach",
+            "broccoli",
+            "onion",
+            "soy sauce",
+            "tomato",
+            "garlic",
+            "carrot"
+        ],
+        "diet": "none",
+        "cuisine": "asian",
+        "description": "Pantry: ['spinach', 'broccoli', 'onion', 'soy sauce', 'tomato', 'garlic', 'carrot'], diet=none, cuisine=asian"
+    },
+    {
+        "id": 8,
+        "pantry": [
+            "rice",
+            "egg",
+            "spinach",
+            "butter",
+            "lentils"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "none",
+        "description": "Pantry: ['rice', 'egg', 'spinach', 'butter', 'lentils'], diet=gluten-free, cuisine=none"
+    },
+    {
+        "id": 9,
+        "pantry": [
+            "broccoli",
+            "lemon",
+            "basil",
+            "pasta"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "mexican",
+        "description": "Pantry: ['broccoli', 'lemon', 'basil', 'pasta'], diet=gluten-free, cuisine=mexican"
+    },
+    {
+        "id": 10,
+        "pantry": [
+            "beef",
+            "beans",
+            "garlic",
+            "bell pepper",
+            "onion",
+            "lentils"
+        ],
+        "diet": "vegan",
+        "cuisine": "indian",
+        "description": "Pantry: ['beef', 'beans', 'garlic', 'bell pepper', 'onion', 'lentils'], diet=vegan, cuisine=indian"
+    },
+    {
+        "id": 11,
+        "pantry": [
+            "broccoli",
+            "beans",
+            "onion"
+        ],
+        "diet": "none",
+        "cuisine": "none",
+        "description": "Pantry: ['broccoli', 'beans', 'onion'], diet=none, cuisine=none"
+    },
+    {
+        "id": 12,
+        "pantry": [
+            "tofu",
+            "pasta",
+            "beans",
+            "carrot",
+            "beef"
+        ],
+        "diet": "vegetarian",
+        "cuisine": "italian",
+        "description": "Pantry: ['tofu', 'pasta', 'beans', 'carrot', 'beef'], diet=vegetarian, cuisine=italian"
+    },
+    {
+        "id": 13,
+        "pantry": [
+            "broccoli",
+            "tofu",
+            "bell pepper",
+            "olive oil",
+            "soy sauce"
+        ],
+        "diet": "vegan",
+        "cuisine": "american",
+        "description": "Pantry: ['broccoli', 'tofu', 'bell pepper', 'olive oil', 'soy sauce'], diet=vegan, cuisine=american"
+    },
+    {
+        "id": 14,
+        "pantry": [
+            "potato",
+            "beans",
+            "lentils",
+            "lemon"
+        ],
+        "diet": "none",
+        "cuisine": "none",
+        "description": "Pantry: ['potato', 'beans', 'lentils', 'lemon'], diet=none, cuisine=none"
+    },
+    {
+        "id": 15,
+        "pantry": [
+            "potato",
+            "rice",
+            "garlic",
+            "beef",
+            "milk"
+        ],
+        "diet": "none",
+        "cuisine": "mexican",
+        "description": "Pantry: ['potato', 'rice', 'garlic', 'beef', 'milk'], diet=none, cuisine=mexican"
+    },
+    {
+        "id": 16,
+        "pantry": [
+            "tofu",
+            "egg",
+            "bell pepper",
+            "pasta",
+            "cheese"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "american",
+        "description": "Pantry: ['tofu', 'egg', 'bell pepper', 'pasta', 'cheese'], diet=gluten-free, cuisine=american"
+    },
+    {
+        "id": 17,
+        "pantry": [
+            "rice",
+            "bell pepper",
+            "tofu",
+            "egg",
+            "milk",
+            "lentils",
+            "cheese"
+        ],
+        "diet": "none",
+        "cuisine": "none",
+        "description": "Pantry: ['rice', 'bell pepper', 'tofu', 'egg', 'milk', 'lentils', 'cheese'], diet=none, cuisine=none"
+    },
+    {
+        "id": 18,
+        "pantry": [
+            "bell pepper",
+            "onion",
+            "lentils",
+            "egg"
+        ],
+        "diet": "vegan",
+        "cuisine": "asian",
+        "description": "Pantry: ['bell pepper', 'onion', 'lentils', 'egg'], diet=vegan, cuisine=asian"
+    },
+    {
+        "id": 19,
+        "pantry": [
+            "lemon",
+            "onion",
+            "basil"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "none",
+        "description": "Pantry: ['lemon', 'onion', 'basil'], diet=gluten-free, cuisine=none"
+    },
+    {
+        "id": 20,
+        "pantry": [
+            "basil",
+            "flour",
+            "olive oil",
+            "chicken",
+            "cheese",
+            "beef",
+            "garlic"
+        ],
+        "diet": "gluten-free",
+        "cuisine": "american",
+        "description": "Pantry: ['basil', 'flour', 'olive oil', 'chicken', 'cheese', 'beef', 'garlic'], diet=gluten-free, cuisine=american"
+    }
+]
