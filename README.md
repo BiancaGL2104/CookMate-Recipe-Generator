@@ -276,7 +276,7 @@ Notebook `08_evaluation_scenarios.ipynb` tests:
 * Backend integration testing
 * Project structure & documentation
 
-### **Teammate**
+### **Berin Venedik**
 
 * Query builder
 * Retrieved recipe formatter
